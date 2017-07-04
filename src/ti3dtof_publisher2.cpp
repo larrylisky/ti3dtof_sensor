@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     Voxel::CameraSystem _sys;
     std::vector< DevicePtr > _device = _sys.scan();
     std::map< String, Grabber* > _connected;
+    int w = 0, h = 0;
 
     // Find all attached cameras 
     if (_device.size() <= 0) 
@@ -29,17 +30,28 @@ int main(int argc, char** argv)
 
     DepthCameraPtr dc = _sys.connect(_device[0]);
     Grabber *grabber = new Grabber(dc, Grabber::FRAMEFLAG_ALL, _sys);
+    grabber->getFrameSize(w, h);
     grabber->start();
 
     ros::NodeHandle n;
-    ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud>("cloud", 50);
+    ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud2>("cloud", 50);
     int count = 0;
     ros::Rate r(30.0);
 
-    while(n.ok()){
-        sensor_msgs::PointCloud cloud;
+    while(n.ok())
+    {
+        sensor_msgs::PointCloud2 cloud;
         cloud.header.stamp = ros::Time::now();
         cloud.header.frame_id = "sensor_frame";
+
+        cloud.height = h;
+        cloud.width = w;
+        cloud.is_bigendian = true;
+        cloud.fields.name = string("XYZI");
+        cloud.offset = 0;
+        cloud.datatype = sensor_msgs::FLOAT32;
+        cloud.count = 4;
+
 
         if (grabber->getFrameCount() > 0) 
         {
