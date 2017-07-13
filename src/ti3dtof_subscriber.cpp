@@ -3,8 +3,8 @@
 #include <sensor_msgs/PointCloud.h>
 
 
-void cloud_callback (const sensor_msgs::PointCloud& cloud){
-//     ROS_INFO("inside callback");
+void cloud_callback (const sensor_msgs::PointCloud& cloud)
+{
     int num_points = cloud.points.size();
     
     for(unsigned int i = 0; i < num_points; ++i){
