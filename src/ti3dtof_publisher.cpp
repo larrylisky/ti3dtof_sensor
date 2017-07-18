@@ -23,7 +23,6 @@ int main(int argc, char** argv)
     std::map< String, Grabber* > _connected;
     int width, height;
 
-#if 0
     // Find all attached cameras 
     if (_device.size() <= 0) 
     {
@@ -34,9 +33,8 @@ int main(int argc, char** argv)
     DepthCameraPtr dc = _sys.connect(_device[0]);
     Grabber *grabber = new Grabber(dc, Grabber::FRAMEFLAG_ALL, _sys);
     grabber->getFrameSize(height, width);
-    grabber->start();
-#endif
-
+    
+	// Setup ROS
     ros::NodeHandle n;
     ros::Publisher laser_pub, cloud_pub;
 
@@ -45,6 +43,8 @@ int main(int argc, char** argv)
     float frameRate;
     int hStart, hEnd;
     float minRange, maxRange;
+	float flypixThr;
+	int order;
 
     ros::NodeHandle priv_n("~");
     priv_n.param("laser", laserTopic, std::string("scan"));
@@ -56,6 +56,8 @@ int main(int argc, char** argv)
     priv_n.param("hEnd", hEnd, height);
     priv_n.param("minRange", minRange, 0.0f);
     priv_n.param("maxRange", maxRange, 25.0f);
+	priv_n.param("flypixThr", flypixThr, 500.0f);
+	priv_n.param("order", order, 1);
 
 #if 1
     std::cout << "~laser := " << laserTopic << std::endl;
@@ -67,18 +69,33 @@ int main(int argc, char** argv)
     std::cout << "~hEnd := " << hEnd << std::endl;
     std::cout << "~minRange := " << minRange << std::endl;
     std::cout << "~maxRange := " << maxRange << std::endl;
+    std::cout << "~flypixThr := " << flypixThr << std::endl;
+    std::cout << "~order := " << order << std::endl;
 #endif
 
-   // Find all attached cameras 
-    if (_device.size() <= 0) 
-    {
-        ROS_ERROR("No camera connected.");
-        return -1;
-    }
+	// Setup ToF filters
+	FilterPtr p;
+#if 0
+	p = grabber->createFilter("Voxel::TemporalMedianFilter",
+		DepthCamera::FRAME_RAW_FRAME_PROCESSED);
+    if (!p) logger(LOG_ERROR) << "Failed to get TemporalMedianFilter" << std::endl;
+	p->set("deadband", 0.0f);
+	p->set("order", (uint)order);
+	grabber->addFilter(p, DepthCamera::FRAME_RAW_FRAME_PROCESSED);
+#endif
+	p = grabber->createFilter("Voxel::MedianFilter",
+		DepthCamera::FRAME_RAW_FRAME_PROCESSED);
+    if (!p) logger(LOG_ERROR) << "Failed to get MedianFilter" << std::endl;
+	p->set("deadband", 0.0f);
+	grabber->addFilter(p, DepthCamera::FRAME_RAW_FRAME_PROCESSED);
 
-    DepthCameraPtr dc = _sys.connect(_device[0]);
-    Grabber *grabber = new Grabber(dc, Grabber::FRAMEFLAG_ALL, _sys);
-    grabber->getFrameSize(height, width);
+	p = grabber->createFilter("Voxel::FlypixFilter", 
+		DepthCamera::FRAME_RAW_FRAME_PROCESSED);
+    if (!p) logger(LOG_ERROR) << "Failed to get FlypixFilter" << std::endl;
+	p->set("threshold", flypixThr);
+	grabber->addFilter(p, DepthCamera::FRAME_RAW_FRAME_PROCESSED);
+
+	// Start ToF camera
     grabber->start();
 
     // Advertize ROS topics
@@ -91,10 +108,10 @@ int main(int argc, char** argv)
     ros::Rate r(frameRate);
 
     sensor_msgs::LaserScan laser;
-    laser.header.frame_id = "ti3dtof_sensor";
-    laser.angle_min = -hfov/2.0;
-    laser.angle_max = hfov/2.0;
-    laser.angle_increment = vfov/width;
+    laser.header.frame_id = "ti3dtof_frame";
+    laser.angle_min = -hfov*M_PI/180.0/2.0;
+    laser.angle_max = hfov*M_PI/180.0/2.0;
+    laser.angle_increment = vfov*M_PI/180.0/width;
     laser.time_increment = 0.0;
     laser.scan_time = 1.0/frameRate;
     laser.range_min = minRange;
@@ -136,8 +153,8 @@ int main(int argc, char** argv)
                                 intensity = amplitude;
                             }
                         }
-                        laser.ranges[j] = minDist;
-                        laser.intensities[j] = intensity;
+                        laser.ranges[width-j] = minDist;
+                        laser.intensities[width-j] = intensity;
                     }
 
                     laser_pub.publish(laser);
@@ -162,8 +179,8 @@ int main(int argc, char** argv)
                     //generate some fake data for our point cloud
                     for (int i = 0; i < num_points; ++i)
                     {
-                        cloud.points[i].x = pclFrame->points[i].x;
-                        cloud.points[i].y = pclFrame->points[i].y;
+                        cloud.points[i].x = -pclFrame->points[i].x;
+                        cloud.points[i].y = -pclFrame->points[i].y;
                         cloud.points[i].z = pclFrame->points[i].z;
                         cloud.channels[0].values[i] = pclFrame->points[i].i;
                     }

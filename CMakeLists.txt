@@ -4,7 +4,7 @@ project(ti3dtof_sensor)
 ##==============================================================================
 ## Add support for C++11, supported in ROS Kinetic and newer
 ##==============================================================================
-add_definitions(-msse2 -pthread -std=c++11 -fPIC -ffast-math -fpermissive)
+add_definitions(-pthread -std=c++11 -fPIC -ffast-math -fpermissive)
 
 ##==============================================================================
 ## Find catkin macros and libraries
@@ -33,7 +33,7 @@ add_definitions(${PCL_DEFINITIONS})
 ##==============================================================================
 set(VOXEL_INCLUDE_DIRS "." /usr/include/voxel /usr/include/voxel/pcl /usr/include/voxel/ti3dtof /usr/include/voxel/Filter )
 
-set(VOXEL_LIBRARIES /usr/lib/libti3dtof.so /usr/lib/libvoxel.so /usr/lib/libvoxelpcl.so X11 ${OpenCV_LIBS} ${VOXEL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
+set(VOXEL_LIBRARIES /usr/lib/libti3dtof.so /usr/lib/libvoxel.so X11 ${OpenCV_LIBS} ${VOXEL_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES})
 
 ##==============================================================================
 ## Uncomment this if the package has a setup.py. This macro ensures
