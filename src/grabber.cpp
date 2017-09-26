@@ -19,7 +19,7 @@
  *
  *=============================================================================
  */
-Grabber::Grabber(DepthCameraPtr depthCamera, FrameFlag frameFlag, CameraSystem &sys) :
+Grabber::Grabber(DepthCameraPtr depthCamera, FrameSize sz, FrameFlag frameFlag, CameraSystem &sys) :
         _depthCamera(depthCamera), _frameFlag(frameFlag), _sys(sys)
 {  
     if (!_depthCamera->isInitialized())
@@ -28,8 +28,9 @@ Grabber::Grabber(DepthCameraPtr depthCamera, FrameFlag frameFlag, CameraSystem &
         return;
     }
 
-    FrameSize sz;
-    _depthCamera->getFrameSize(sz);
+   // FrameSize sz;
+   _depthCamera->setFrameSize(sz);
+   _depthCamera->getFrameSize(sz);
     
     _rows = sz.height;
     _cols = sz.width;
@@ -63,6 +64,32 @@ Grabber::Grabber(DepthCameraPtr depthCamera, FrameFlag frameFlag, CameraSystem &
 }
 
 
+/*!
+ *=============================================================================
+ *
+ * \brief Grabber::setFrameSize(int width, int height)
+ * \return  true - success
+ *
+ *=============================================================================
+ */
+bool Grabber::setFrameSize(int width, int height)
+{
+    FrameSize dim, rdim;
+
+    dim.width = width;
+    dim.height = height;
+   
+    _depthCamera->setFrameSize(dim);
+    _depthCamera->getFrameSize(rdim);  
+
+    if (dim.width == rdim.width && dim.height == rdim.height)
+    {
+        _rows = dim.height;
+        _cols = dim.width;
+        return true;
+    }
+    return false;
+}
 
 /*!
  *=============================================================================

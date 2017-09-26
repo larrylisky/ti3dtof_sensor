@@ -68,7 +68,7 @@ protected:
     void _applyFilter();
 
 public:
-    Grabber(DepthCameraPtr depthCamera, FrameFlag flag, CameraSystem &sys);
+    Grabber(DepthCameraPtr depthCamera, FrameSize sz, FrameFlag flag, CameraSystem &sys);
 
     virtual float getFramesPerSecond() const
     {
@@ -133,7 +133,9 @@ public:
 
     virtual void setFrameRate(float frameRate);
     
-    virtual void getFrameSize(int &rows, int &cols) { rows=_rows; cols=_cols; }
+    virtual bool setFrameSize(int rows, int cols);
+
+    virtual void getFrameSize(int &width, int &height) { height=_rows; width=_cols; }
 
     bool getSerialNumber(std::string &str);
 
